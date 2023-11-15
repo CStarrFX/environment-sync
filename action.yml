@@ -1,0 +1,21 @@
+# action.yml
+name: 'Environment Sync'
+description: 'Sync one environment with another. Copy a production environment into a non-production one, including its git history, files, and database'
+inputs:
+  production_environment:
+    description: 'The environment you want to copy to the non-production one'
+    required: true
+    default: 'main'
+  non_production_environment:
+    description: 'The environment you want to copy the production one to'
+    required: true
+    default: 'staging'
+outputs:
+  status: # id of output
+    description: 'The status of the environment sync action'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.production_environment }}
+    - ${{ inputs.non_production_environment }}

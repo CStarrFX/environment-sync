@@ -13,6 +13,13 @@ inputs:
 outputs:
   status: # id of output
     description: 'The status of the environment sync action'
-runs: |
-  #output the status
-  echo ::set-output name=status::success
+runs:
+  using: "composite"
+  steps:
+  - name: Sync environments
+    run: |
+      echo "Syncing ${{ inputs.production_environment }} to ${{ inputs.non_production_environment }}"
+      # Sync the environments
+      # return the status
+      echo "::set-output name=status::success"
+    shell: bash

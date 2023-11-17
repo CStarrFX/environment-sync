@@ -53,5 +53,5 @@ runs:
       echo "Destination target user: ${{ inputs.destination_target_user }}"
 
       # return the status
-      echo "::set-output name=status::success"
+      echo "status=success" >> $GITHUB_OUTPUT
     shell: bash

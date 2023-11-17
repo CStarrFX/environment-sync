@@ -2,14 +2,38 @@
 name: 'Environment Sync'
 description: 'Sync one environment with another. Copy a production environment into a non-production one, including its git history, files, and database'
 inputs:
-  production_environment:
+  source:
     description: 'The environment you want to copy to the non-production one'
     required: true
     default: 'main'
-  non_production_environment:
+  destination:
     description: 'The environment you want to copy the production one to'
     required: true
     default: 'staging'
+  source_repo_private_key:
+    description: 'The private key of the source repo'
+    required: true
+  source_target_host:
+    description: 'The host of the source environment'
+    required: true
+  source_target_repo:
+    description: 'The repo of the source environment'
+    required: true
+  source_target_user:
+    description: 'The user of the source environment'
+    required: true
+  destination_repo_private_key:
+    description: 'The private key of the destination repo'
+    required: true
+  destination_target_host:
+    description: 'The host of the destination environment'
+    required: true
+  destination_target_repo:
+    description: 'The repo of the destination environment'
+    required: true
+  destination_target_user:
+    description: 'The user of the destination environment'
+    required: true
 outputs:
   status: # id of output
     description: 'The status of the environment sync action'
@@ -18,8 +42,16 @@ runs:
   steps:
   - name: Sync environments
     run: |
-      echo "Syncing ${{ inputs.production_environment }} to ${{ inputs.non_production_environment }}"
-      # Sync the environments
+      echo "Syncing ${{ inputs.source }} to ${{ inputs.destination }}"
+      echo "Source repo private key: ${{ inputs.source_repo_private_key }}"
+      echo "Source target host: ${{ inputs.source_target_host }}"
+      echo "Source target repo: ${{ inputs.source_target_repo }}"
+      echo "Source target user: ${{ inputs.source_target_user }}"
+      echo "Destination repo private key: ${{ inputs.destination_repo_private_key }}"
+      echo "Destination target host: ${{ inputs.destination_target_host }}"
+      echo "Destination target repo: ${{ inputs.destination_target_repo }}"
+      echo "Destination target user: ${{ inputs.destination_target_user }}"
+
       # return the status
       echo "::set-output name=status::success"
     shell: bash

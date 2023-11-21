@@ -22,6 +22,15 @@ inputs:
   source_target_user:
     description: 'The user of the source environment'
     required: true
+  source_database_user:
+    description: 'The database user of the source environment'
+    required: true
+  source_database_password:
+    description: 'The database password of the source environment'
+    required: true
+  source_database_name:
+    description: 'The database name of the source environment'
+    required: true
   destination_repo_private_key:
     description: 'The private key of the destination repo'
     required: true
@@ -33,6 +42,15 @@ inputs:
     required: true
   destination_target_user:
     description: 'The user of the destination environment'
+    required: true
+  destination_database_user:
+    description: 'The database user of the destination environment'
+    required: true
+  destination_database_password:
+    description: 'The database password of the destination environment'
+    required: true
+  destination_database_name:
+    description: 'The database name of the destination environment'
     required: true
 outputs:
   status: # id of output

@@ -80,8 +80,24 @@ runs:
     shell: bash
   - name: Sync databases
     run: |
-      echo "${{ inputs.source_repo_private_key }}" > source_repo_private_key
+      echo "${{ inputs.source_repo_private_key }}" | tr -d ' ' > source_repo_private_key
       echo "${{ inputs.destination_repo_private_key }}" > destination_repo_private_key
+
+      #in source_repo_private_key, add a newline after "-----BEGIN OPENSSH PRIVATE KEY-----"
+      sed -i 's/-----BEGIN OPENSSH PRIVATE KEY-----/-----BEGIN OPENSSH PRIVATE KEY-----\n/' source_repo_private_key
+      sed -i 's/-----BEGIN OPENSSH PRIVATE KEY-----/-----BEGIN OPENSSH PRIVATE KEY-----\n/' destination_repo_private_key
+
+      #add a newline before "-----END OPENSSH PRIVATE KEY-----" in private key files
+      sed -i 's/-----END OPENSSH PRIVATE KEY-----/\n/-----END OPENSSH PRIVATE KEY-----/' source_repo_private_key
+      sed -i 's/-----END OPENSSH PRIVATE KEY-----/\n/-----END OPENSSH PRIVATE KEY-----/' destination_repo_private_key
+
+      #remove all whitespace on line 2 of private key files
+      sed -i '2s/ //g' source_repo_private_key
+      sed -i '2s/ //g' destination_repo_private_key
+
+      cat source_repo_private_key
+      cat destination_repo_private_key
+
 
       #SSH into source host, navigate to source repo, dump mysql database
       ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p ${{ inputs.source_database_password }} ${{ inputs.source_database_name }} > dump.sql"

@@ -10,12 +10,48 @@ inputs:
     description: 'The environment you want to copy the production one to'
     required: true
     default: 'staging'
-  secrets:
+  source_repo_private_key:
+    description: 'The private key of the source repo'
     required: true
-    default: 'staging'
-  variables:
+  source_target_host:
+    description: 'The host of the source environment'
     required: true
-    default: 'staging'
+  source_target_repo:
+    description: 'The repo of the source environment'
+    required: true
+  source_target_user:
+    description: 'The user of the source environment'
+    required: true
+  source_database_user:
+    description: 'The database user of the source environment'
+    required: true
+  source_database_password:
+    description: 'The database password of the source environment'
+    required: true
+  source_database_name:
+    description: 'The database name of the source environment'
+    required: true
+  destination_repo_private_key:
+    description: 'The private key of the destination repo'
+    required: true
+  destination_target_host:
+    description: 'The host of the destination environment'
+    required: true
+  destination_target_repo:
+    description: 'The repo of the destination environment'
+    required: true
+  destination_target_user:
+    description: 'The user of the destination environment'
+    required: true
+  destination_database_user:
+    description: 'The database user of the destination environment'
+    required: true
+  destination_database_password:
+    description: 'The database password of the destination environment'
+    required: true
+  destination_database_name:
+    description: 'The database name of the destination environment'
+    required: true
 outputs:
   status: # id of output
     description: 'The status of the environment sync action'
@@ -24,15 +60,39 @@ runs:
   steps:
   - name: Output inputs
     run: |
-
-      echo $source
-
-      echo $destination
-
-      echo $secrets
-
-      echo $variables
+      echo 'Syncing ${{ inputs.source }} to ${{ inputs.destination }}'
+      echo 'Source target host: ${{ inputs.source_target_host }}'
+      echo 'Source target repo: ${{ inputs.source_target_repo }}'
+      echo 'Source target user: ${{ inputs.source_target_user }}'
+      echo 'Source database name: ${{ inputs.source_database_name }}'
+      echo 'Source database user: ${{ inputs.source_database_user }}'
+      echo 'Source repo private key: ${{ inputs.source_repo_private_key }}'
+      echo 'Source database password: ${{ inputs.source_database_password }}'
+      echo 'Destination target host: ${{ inputs.destination_target_host }}'
+      echo 'Destination target repo: ${{ inputs.destination_target_repo }}'
+      echo 'Destination target user: ${{ inputs.destination_target_user }}'
+      echo 'Destination database name: ${{ inputs.destination_database_name }}'
+      echo 'Destination database user: ${{ inputs.destination_database_user }}'
+      echo 'Destination repo private key: ${{ inputs.destination_repo_private_key }}'
+      echo 'Destination database password: ${{ inputs.destination_database_password }}'
       # return the status
+      echo "status=success" >> $GITHUB_OUTPUT
+    shell: bash
+  - name: Sync databases
+    run: |
+      echo "${{ inputs.source_repo_private_key }}" > source_repo_private_key
+      echo "${{ inputs.destination_repo_private_key }}" > destination_repo_private_key
+
+      cat source_repo_private_key
+      cat destination_repo_private_key
+
+      #SSH into source host, navigate to source repo, dump mysql database
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p ${{ inputs.source_database_password }} ${{ inputs.source_database_name }} > dump.sql"
+
+      echo "status=success" >> $GITHUB_OUTPUT
+    shell: bash
+  - name: Sync files
+    run: |
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash
 

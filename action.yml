@@ -80,8 +80,8 @@ runs:
     shell: bash
   - name: Sync databases
     run: |
-      echo "${{ inputs.source_repo_private_key }}" > source_repo_private_key
-      echo "${{ inputs.destination_repo_private_key }}" > destination_repo_private_key
+      echo "${{ inputs.source_repo_private_key }}" | tr '*' '\n' > source_repo_private_key
+      echo "${{ inputs.destination_repo_private_key }}" | tr '*' '\n' > destination_repo_private_key
 
       cat source_repo_private_key
       cat destination_repo_private_key

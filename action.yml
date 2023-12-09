@@ -84,6 +84,9 @@ runs:
       echo "${{ inputs.source_repo_private_key }}" | tr '*' '\n' > source_repo_private_key
       echo "${{ inputs.destination_repo_private_key }}" | tr '*' '\n' > destination_repo_private_key
 
+      chmod 600 source_repo_private_key
+      chmod 600 destination_repo_private_key
+
       #create ssh directory and known_hosts file
       mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
 

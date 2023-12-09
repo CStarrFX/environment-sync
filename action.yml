@@ -95,7 +95,7 @@ runs:
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
       #SSH into source host, navigate to source repo, dump mysql database
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p ${{ inputs.source_database_password }} ${{ inputs.source_database_name }} > dump.sql"
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u '${{ inputs.source_database_user }}' -p '${{ inputs.source_database_password }}' '${{ inputs.source_database_name }}' > dump.sql"
 
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash

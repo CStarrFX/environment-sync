@@ -80,14 +80,16 @@ runs:
     shell: bash
   - name: Sync databases
     run: |
+      
       echo "${{ inputs.source_repo_private_key }}" | tr '*' '\n' > source_repo_private_key
       echo "${{ inputs.destination_repo_private_key }}" | tr '*' '\n' > destination_repo_private_key
 
-      chmod 600 source_repo_private_key
-      chmod 600 destination_repo_private_key
+      #create ssh directory and known_hosts file
+      mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
 
-      cat source_repo_private_key
-      cat destination_repo_private_key
+      #run ssh-keyscan to add host to known_hosts
+      ssh-keyscan -H ${{ inputs.source_target_host }} >> ~/.ssh/known_hosts
+      ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
       #SSH into source host, navigate to source repo, dump mysql database
       ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p ${{ inputs.source_database_password }} ${{ inputs.source_database_name }} > dump.sql"

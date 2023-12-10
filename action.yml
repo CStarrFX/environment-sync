@@ -84,6 +84,7 @@ runs:
       echo "${{ inputs.source_repo_private_key }}" | tr '*' '\n' > source_repo_private_key
       echo "${{ inputs.destination_repo_private_key }}" | tr '*' '\n' > destination_repo_private_key
 
+      #set permissions on private keys to avoid unprotected private key file error
       chmod 600 source_repo_private_key
       chmod 600 destination_repo_private_key
 
@@ -95,7 +96,7 @@ runs:
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
       #SSH into source host, navigate to source repo, dump mysql database
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u '${{ inputs.source_database_user }}' -p '${{ inputs.source_database_password }}' '${{ inputs.source_database_name }}' > dump.sql"
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'source_database_pw=${{ inputs.source_database_password }} && cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p"\"$source_database_pw\"" ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
 
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash

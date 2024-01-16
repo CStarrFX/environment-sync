@@ -105,8 +105,9 @@ runs:
       #SSH into source host, navigate to source repo, dump mysql database
       ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
 
-      #search-replace source domain with destination domain in database dump file with sed
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && sed -i "s|http://cstarr-codespace.webpagefxstage.com|https://cstarr-codespace2.webpagefxstage.com|g" ${{ inputs.source_database_name }}.sql'
+      #pass the local variable into the source host, then search-replace source domain with destination domain in database dump file with sed
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && sed -i 's|$source_url|$destination_url|g' ${{ inputs.source_database_name }}.sql"
+
 
       echo "Preparing SSH agent forwards..."
       eval $(ssh-agent -s)

@@ -96,20 +96,7 @@ runs:
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
       #SSH into source host, navigate to source repo, dump mysql database
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > source_domain.txt && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
-
-      #echo "Preparing SSH tunnel..."
-
-      #set up ssh tunnel from source to destination
-      #ssh -tt -i  source_repo_private_key -L 8080:${{ inputs.destination_target_host }}:22 ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}
-
-      #echo "SSH tunnel established. Preparing to transfer files..."
-
-      #transfer database dump from source to destination
-      #scp -i destination_repo_private_key -P 8080 localhost:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
-
-      #transfer source domain from source to destination
-      #scp -i destination_repo_private_key -P 8080 localhost:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_repo }}/source_domain.txt
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > source_domain.txt && sed -i '1d' source_domain.txt && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
 
       echo "Preparing SSH agent forwards..."
       eval $(ssh-agent -s)
@@ -122,6 +109,22 @@ runs:
       scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/source_domain.txt
 
       echo "Files transferred. Preparing to import database..."
+
+      #SSH into destination host, navigate to destination repo, output destination domain to file
+      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > destination_domain.txt && sed -i '1d' destination_domain.txt'
+
+      #in destination host, navigate to destination repo, search-replace source domain with destination domain in database dump file without wp-cli
+      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && sed -i "s/$(cat source_domain.txt)/$(cat destination_domain.txt)/g" ${{ inputs.source_database_name }}.sql'
+
+      #in destination host, navigate to destination repo and import database dump file using mysql
+      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} < ${{ inputs.source_database_name }}.sql'
+      
+
+      echo "Database imported. Preparing to sync files..."
+
+
+
+
 
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash

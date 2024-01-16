@@ -99,6 +99,10 @@ runs:
 
       destination_url=$(ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"')
 
+      #escape forward slashes in source and destination urls
+      source_url=$(echo $source_url | sed 's/\//\\\//g')
+      destination_url=$(echo $destination_url | sed 's/\//\\\//g')
+
       echo "Source URL: $source_url" 
       echo "Destination URL: $destination_url"
 

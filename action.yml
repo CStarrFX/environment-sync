@@ -113,8 +113,8 @@ runs:
 
       echo "Preparing SSH agent forwards..."
       eval $(ssh-agent -s)
-      ssh-add - <<< "${{ inputs.source_repo_private_key }}"
-      ssh-add - <<< "${{ inputs.destination_repo_private_key }}"
+      ssh-add source_repo_private_key
+      ssh-add destination_repo_private_key
 
       echo "SSH agent forwards prepared. Preparing to transfer files..."
       scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql

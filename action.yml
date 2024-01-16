@@ -81,7 +81,7 @@ runs:
       # return the status
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash
-  - name: Prepare SSH
+  - name: Sync
     run: |
       #---------------------------------
       #SSH PREP
@@ -109,9 +109,7 @@ runs:
       ssh-add destination_repo_private_key
 
       echo "SSH prepared. Preparing to sync databases..."
-    shell: bash
-  - name: Sync databases
-    run: |
+
       #---------------------------------
       #DATABASE SYNC
       #---------------------------------
@@ -134,9 +132,7 @@ runs:
       ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} < ${{ inputs.source_database_name }}.sql && rm ${{ inputs.source_database_name }}.sql'
       
       echo "Database imported. Preparing to sync files..."
-    shell: bash
-  - name: Sync files
-    run: |
+
       #---------------------------------
       #FILE SYNC
       #---------------------------------
@@ -152,9 +148,7 @@ runs:
       rsync -avz -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
 
       echo "File sync complete. Preparing to sync branches..."
-    shell: bash
-  - name: Sync branches
-    run: |
+
       #---------------------------------
       #BRANCH SYNC
       #---------------------------------
@@ -162,5 +156,5 @@ runs:
       #echo success status to output
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash
-    
+
 

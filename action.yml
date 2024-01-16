@@ -152,6 +152,7 @@ runs:
       rsync -avz -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
 
       echo "File sync complete. Preparing to sync branches..."
+    shell: bash
   - name: Sync branches
     run: |
       #---------------------------------
@@ -161,4 +162,5 @@ runs:
       #echo success status to output
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash
+    
 

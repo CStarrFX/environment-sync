@@ -95,9 +95,9 @@ runs:
       ssh-keyscan -H ${{ inputs.source_target_host }} >> ~/.ssh/known_hosts
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
-      source_url = $(ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"') 
+      source_url=$(ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"') 
 
-      destination_url = $(ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"')
+      destination_url=$(ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"')
 
       echo "Source URL: $source_url" 
       echo "Destination URL: $destination_url"

@@ -111,7 +111,7 @@ runs:
       echo "Files transferred. Preparing to import database..."
 
       #SSH into destination host, navigate to destination repo, output destination domain to file
-      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > destination_domain.txt && sed -i '1d' destination_domain.txt'
+      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > destination_domain.txt && cat destination_domain.txt && sed -i "1d" destination_domain.txt'
 
       #in destination host, navigate to destination repo, search-replace source domain with destination domain in database dump file without wp-cli
       ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && sed -i "s/$(cat source_domain.txt)/$(cat destination_domain.txt)/g" ${{ inputs.source_database_name }}.sql'

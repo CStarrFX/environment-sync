@@ -98,18 +98,28 @@ runs:
       #SSH into source host, navigate to source repo, dump mysql database
       ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > source_domain.txt && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
 
-      echo "Preparing SSH tunnel..."
+      #echo "Preparing SSH tunnel..."
 
       #set up ssh tunnel from source to destination
-      ssh -tt -i  source_repo_private_key -L 8080:${{ inputs.destination_target_host }}:22 ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}
+      #ssh -tt -i  source_repo_private_key -L 8080:${{ inputs.destination_target_host }}:22 ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}
 
-      echo "SSH tunnel established. Preparing to transfer files..."
+      #echo "SSH tunnel established. Preparing to transfer files..."
 
       #transfer database dump from source to destination
-      scp -i destination_repo_private_key -P 8080 localhost:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
+      #scp -i destination_repo_private_key -P 8080 localhost:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
 
       #transfer source domain from source to destination
-      scp -i destination_repo_private_key -P 8080 localhost:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_repo }}/source_domain.txt
+      #scp -i destination_repo_private_key -P 8080 localhost:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_repo }}/source_domain.txt
+
+      echo "Preparing SSH agent forwards..."
+      eval $(ssh-agent -s)
+      ssh-add - <<< "${{ inputs.source_repo_private_key }}"
+      ssh-add - <<< "${{ inputs.destination_repo_private_key }}"
+
+      echo "SSH agent forwards prepared. Preparing to transfer files..."
+      scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
+
+      scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/source_domain.txt
 
       echo "Files transferred. Preparing to import database..."
 

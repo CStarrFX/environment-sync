@@ -95,6 +95,11 @@ runs:
       ssh-keyscan -H ${{ inputs.source_target_host }} >> ~/.ssh/known_hosts
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
+
+      #---------------------------------
+      #DATABASE SYNC
+      #---------------------------------
+
       source_url=$(ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"') 
 
       destination_url=$(ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"')
@@ -114,19 +119,33 @@ runs:
       ssh-add source_repo_private_key
       ssh-add destination_repo_private_key
 
-      echo "SSH agent forwards prepared. Preparing to transfer files..."
+      echo "SSH agent forwards prepared. Preparing to transfer file from source..."
       scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
 
-      echo "File transferred. Preparing to import database..."
+      #remove database dump file from source host
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && rm ${{ inputs.source_database_name }}.sql"
+
+      echo "File transferred. Preparing to import database on destination..."
 
       #in destination host, navigate to destination repo and import database dump file using mysql
       ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} < ${{ inputs.source_database_name }}.sql'
       
-
       echo "Database imported. Preparing to sync files..."
 
+      #---------------------------------
+      #FILE SYNC
+      #---------------------------------
 
+      echo "Starting file sync..."
 
+      #rsync everything from the source target repo to the destination target repo except wp-config.php
+      rsync -avz -e "ssh -i destination_repo_private_key" --exclude 'wp-config.php' ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
+
+      echo "File sync complete. Preparing to sync branches..."
+
+      #---------------------------------
+      #BRANCH SYNC
+      #---------------------------------
 
 
       echo "status=success" >> $GITHUB_OUTPUT

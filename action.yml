@@ -95,8 +95,18 @@ runs:
       ssh-keyscan -H ${{ inputs.source_target_host }} >> ~/.ssh/known_hosts
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
+      source_url = $(ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"') 
+
+      destination_url = $(ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"')
+
+      echo "Source URL: $source_url" 
+      echo "Destination URL: $destination_url"
+
       #SSH into source host, navigate to source repo, dump mysql database
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > source_domain.txt && sed -i '1d' source_domain.txt && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
+
+      #search-replace source domain with destination domain in database dump file with sed
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && sed -i "s/$source_url/$destination_url/g" ${{ inputs.source_database_name }}.sql'
 
       echo "Preparing SSH agent forwards..."
       eval $(ssh-agent -s)
@@ -106,18 +116,7 @@ runs:
       echo "SSH agent forwards prepared. Preparing to transfer files..."
       scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
 
-      scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/source_domain.txt
-
-      echo "Files transferred. Preparing to import database..."
-
-      #SSH into destination host, navigate to destination repo, output destination domain to file
-      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > destination_domain.txt && cat destination_domain.txt'
-
-      #in destination host, navigate to destination repo, and remove first line of destination domain file
-      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && sed -i '1d' destination_domain.txt'
-
-      #in destination host, navigate to destination repo, search-replace source domain with destination domain in database dump file without wp-cli
-      ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && sed -i "s/$(cat source_domain.txt)/$(cat destination_domain.txt)/g" ${{ inputs.source_database_name }}.sql'
+      echo "File transferred. Preparing to import database..."
 
       #in destination host, navigate to destination repo and import database dump file using mysql
       ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} < ${{ inputs.source_database_name }}.sql'

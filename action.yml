@@ -99,13 +99,13 @@ runs:
       ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysql -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''" > source_domain.txt && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
 
       #set up ssh tunnel from source to destination
-      ssh -i source_repo_private_key -L 8181:${{ inputs.destination_target_host }}:22 ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}
+      ssh -i source_repo_private_key -L 9000:${{ inputs.destination_target_host }}:22 ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}
 
       #transfer database dump from source to destination
-      scp -i destination_repo_private_key -P 8181 localhost:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
+      scp -i destination_repo_private_key -P 9000 localhost:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql
 
       #transfer source domain from source to destination
-      scp -i destination_repo_private_key -P 8181 localhost:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_repo }}/source_domain.txt
+      scp -i destination_repo_private_key -P 9000 localhost:${{ inputs.source_target_repo }}/source_domain.txt ${{ inputs.destination_target_repo }}/source_domain.txt
 
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash

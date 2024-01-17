@@ -158,12 +158,12 @@ runs:
       echo "Starting file sync..."
 
       #rsync everything from the source target repo to the local directory except wp-config.php
-      rsync -avz -e "ssh -i source_repo_private_key" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
+      rsync -az -e "ssh -i source_repo_private_key" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
 
       echo "Files synced to local. Preparing to transfer files to destination..."
 
       #rsync everything from the local directory to the destination target repo
-      rsync -avz --chown="${{ inputs.file_owner }}":"${{ inputs.file_group }}" --perms --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
+      rsync -az --chown=${{ inputs.file_owner }}:${{ inputs.file_group }} --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
 
       echo "File sync complete. Preparing to sync branches..."
 

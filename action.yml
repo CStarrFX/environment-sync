@@ -52,9 +52,22 @@ inputs:
   destination_database_name:
     description: 'The database name of the destination environment'
     required: true
-  github_token:
-    description: 'The token we use to authenticate with GitHub and checkout the repo'
+  file_owner:
+    description: 'The owner of the files'
     required: true
+    default: 'www-data'
+  file_group:
+    description: 'The group of the files'
+    required: true
+    default: 'www-data'
+  file_permissions:
+    description: 'The permissions of the files'
+    required: true
+    default: '644'
+  dir_permissions:
+    description: 'The permissions of the directories'
+    required: true
+    default: '755'
 outputs:
   status: # id of output
     description: 'The status of the environment sync action'
@@ -78,6 +91,8 @@ runs:
       echo 'Destination database user: ${{ inputs.destination_database_user }}'
       echo 'Destination repo private key: ${{ inputs.destination_repo_private_key }}'
       echo 'Destination database password: ${{ inputs.destination_database_password }}'
+      echo 'File owner: ${{ inputs.file_owner }}'
+      echo 'File group: ${{ inputs.file_group }}'
       # return the status
       echo "status=success" >> $GITHUB_OUTPUT
     shell: bash
@@ -139,13 +154,15 @@ runs:
 
       echo "Starting file sync..."
 
+      mkdir site
+
       #rsync everything from the source target repo to the local directory except wp-config.php
-      rsync -avz -e "ssh -i source_repo_private_key" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
+      rsync -avz -e "ssh -i source_repo_private_key" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./site
 
       echo "Files synced to local. Preparing to transfer files to destination..."
 
       #rsync everything from the local directory to the destination target repo
-      rsync -avz -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
+      rsync -avz --chown="${{ inputs.file_owner }}":"${{ inputs.file_group }}" --perms --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./site ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
 
       echo "File sync complete. Preparing to sync branches..."
 

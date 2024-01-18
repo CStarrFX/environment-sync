@@ -189,7 +189,13 @@ runs:
 
       cd repo
 
-      git branch
+      git checkout ${{ inputs.destination }}
+
+      git reset --hard $(git merge-base ${{ inputs.destination }} ${{ inputs.source }})
+
+      git rebase ${{ inputs.source }}
+
+      git push -f origin ${{ inputs.destination }}
 
       #echo success status to output
       echo "status=success" >> $GITHUB_OUTPUT

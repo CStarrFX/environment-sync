@@ -195,6 +195,10 @@ runs:
 
       git rebase ${{ inputs.source }}
 
+      #add user info to git config
+      git config --global user.email "environment-sync@webfx.com"
+      git config --global user.name "Environment Sync Action"
+
       #add empty commit to trigger github action
       git commit --allow-empty -m "Sync ${{ inputs.source }} to ${{ inputs.destination }}"
 

@@ -183,7 +183,11 @@ runs:
       mkdir repo
 
       #clone the repo to the repo directory
-      git clone git@github.com:${{ inputs.github_reposlug }}.git
+      git clone git@github.com:${{ inputs.github_reposlug }}.git repo
+
+      #navigate to the repo directory
+
+      cd repo
 
       git branch
 

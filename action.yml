@@ -200,7 +200,7 @@ runs:
       git config --global user.name "Environment Sync Action"
 
       #add empty commit to trigger github action
-      git commit --allow-empty -m "Sync ${{ inputs.source }} to ${{ inputs.destination }}"
+      git commit --allow-empty -m "Sync ${{ inputs.source }} to ${{ inputs.destination }} [FORCE_DEPLOY]"
 
       #force push to destination branch
       git push -f origin ${{ inputs.destination }}

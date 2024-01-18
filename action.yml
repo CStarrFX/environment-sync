@@ -145,7 +145,7 @@ runs:
       echo "Destination URL: $destination_url"
 
       #SSH into source host, navigate to source repo, dump mysql database, then search and replace source url with destination url in database dump file
-      ssh ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql"
+      ssh ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
 
       ssh ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && sed -i 's|$source_url|$destination_url|g' ${{ inputs.source_database_name }}.sql"
 
@@ -167,12 +167,12 @@ runs:
       echo "Starting file sync..."
 
       #rsync everything from the source target repo to the local directory except wp-config.php
-      rsync -az -e "ssh -i source_repo_private_key" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
+      rsync -az -e "ssh" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
 
       echo "Files synced to local. Preparing to transfer files to destination..."
 
       #rsync everything from the local directory to the destination target repo
-      rsync -az --chown=${{ inputs.file_owner }}:${{ inputs.file_group }} --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh -i destination_repo_private_key" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
+      rsync -az --chown=${{ inputs.file_owner }}:${{ inputs.file_group }} --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
 
       echo "File sync complete. Preparing to sync branches..."
 

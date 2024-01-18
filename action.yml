@@ -68,34 +68,40 @@ inputs:
     description: 'The permissions of the directories'
     required: true
     default: '755'
+  github_reposlug:
+    description: 'The slug of the repo'
+    required: true
 outputs:
   status: # id of output
     description: 'The status of the environment sync action'
 runs:
   using: "composite"
   steps:
-  - name: Output inputs
-    run: |
-      echo 'Syncing ${{ inputs.source }} to ${{ inputs.destination }}'
-      echo 'Source target host: ${{ inputs.source_target_host }}'
-      echo 'Source target repo: ${{ inputs.source_target_repo }}'
-      echo 'Source target user: ${{ inputs.source_target_user }}'
-      echo 'Source database name: ${{ inputs.source_database_name }}'
-      echo 'Source database user: ${{ inputs.source_database_user }}'
-      echo 'Source repo private key: ${{ inputs.source_repo_private_key }}'
-      echo 'Source database password: ${{ inputs.source_database_password }}'
-      echo 'Destination target host: ${{ inputs.destination_target_host }}'
-      echo 'Destination target repo: ${{ inputs.destination_target_repo }}'
-      echo 'Destination target user: ${{ inputs.destination_target_user }}'
-      echo 'Destination database name: ${{ inputs.destination_database_name }}'
-      echo 'Destination database user: ${{ inputs.destination_database_user }}'
-      echo 'Destination repo private key: ${{ inputs.destination_repo_private_key }}'
-      echo 'Destination database password: ${{ inputs.destination_database_password }}'
-      echo 'File owner: ${{ inputs.file_owner }}'
-      echo 'File group: ${{ inputs.file_group }}'
-      # return the status
-      echo "status=success" >> $GITHUB_OUTPUT
-    shell: bash
+  # - name: Output inputs
+  #   run: |
+  #     echo 'Syncing ${{ inputs.source }} to ${{ inputs.destination }}'
+  #     echo 'Source target host: ${{ inputs.source_target_host }}'
+  #     echo 'Source target repo: ${{ inputs.source_target_repo }}'
+  #     echo 'Source target user: ${{ inputs.source_target_user }}'
+  #     echo 'Source database name: ${{ inputs.source_database_name }}'
+  #     echo 'Source database user: ${{ inputs.source_database_user }}'
+  #     echo 'Source repo private key: ${{ inputs.source_repo_private_key }}'
+  #     echo 'Source database password: ${{ inputs.source_database_password }}'
+  #     echo 'Destination target host: ${{ inputs.destination_target_host }}'
+  #     echo 'Destination target repo: ${{ inputs.destination_target_repo }}'
+  #     echo 'Destination target user: ${{ inputs.destination_target_user }}'
+  #     echo 'Destination database name: ${{ inputs.destination_database_name }}'
+  #     echo 'Destination database user: ${{ inputs.destination_database_user }}'
+  #     echo 'Destination repo private key: ${{ inputs.destination_repo_private_key }}'
+  #     echo 'Destination database password: ${{ inputs.destination_database_password }}'
+  #     echo 'File owner: ${{ inputs.file_owner }}'
+  #     echo 'File group: ${{ inputs.file_group }}'
+  #     echo 'File permissions: ${{ inputs.file_permissions }}'
+  #     echo 'Dir permissions: ${{ inputs.dir_permissions }}'
+  #     echo 'Github repo slug: ${{ inputs.github_reposlug }}'
+  #     # return the status
+  #     echo "status=success" >> $GITHUB_OUTPUT
+  #   shell: bash
   - name: Sync
     run: |
       #---------------------------------
@@ -118,7 +124,7 @@ runs:
       ssh-keyscan -H ${{ inputs.source_target_host }} >> ~/.ssh/known_hosts
       ssh-keyscan -H ${{ inputs.destination_target_host }} >> ~/.ssh/known_hosts
 
-      echo "Preparing SSH agent forwards..."
+      #prepare ssh-agent and add private keys
       eval $(ssh-agent -s)
       ssh-add source_repo_private_key
       ssh-add destination_repo_private_key
@@ -138,11 +144,8 @@ runs:
 
       destination_url=$(ssh -i destination_repo_private_key ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }} 'cd ${{ inputs.destination_target_repo }} && mysql -u ${{ inputs.destination_database_user }} -p'\''${{ inputs.destination_database_password }}'\'' ${{ inputs.destination_database_name }} -B -N -e "SELECT option_value FROM wp_options WHERE option_name = '\''siteurl'\''"')
 
-      #SSH into source host, navigate to source repo, dump mysql database
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} 'cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql'
-
-      #SSH into source host, navigate to source repo, replace source url with destination url in database dump file
-      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && sed -i 's|$source_url|$destination_url|g' ${{ inputs.source_database_name }}.sql"
+      #SSH into source host, navigate to source repo, dump mysql database, then search and replace source url with destination url in database dump file
+      ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && mysqldump -u ${{ inputs.source_database_user }} -p'\''${{ inputs.source_database_password }}'\'' ${{ inputs.source_database_name }} > ${{ inputs.source_database_name }}.sql && sed -i 's|$source_url|$destination_url|g' ${{ inputs.source_database_name }}.sql"
 
       scp -o ForwardAgent=yes ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source_database_name }}.sql ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/${{ inputs.source_database_name }}.sql && ssh -i source_repo_private_key ${{ inputs.source_target_user }}@${{ inputs.source_target_host }} "cd ${{ inputs.source_target_repo }} && rm ${{ inputs.source_database_name }}.sql"
 
@@ -170,6 +173,13 @@ runs:
       #---------------------------------
       #BRANCH SYNC
       #---------------------------------
+
+      mkdir repo
+
+      #clone the repo to the repo directory
+      git clone git@github.com:${{ inputs.github_reposlug }}.git
+
+      git branch
 
       #echo success status to output
       echo "status=success" >> $GITHUB_OUTPUT

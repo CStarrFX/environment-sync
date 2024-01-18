@@ -166,16 +166,16 @@ runs:
 
       echo "Starting file sync..."
 
-      #rsync everything from the source target repo to the local directory except symlinks, wp-config.php and everything in /staging/shared
-      rsync -azL -e "ssh" --exclude wp-config.php --exclude '/${{inputs.source}}/shared/' ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
+      #rsync everything from the source target repo to the local directory except symlinks (not including the files they point to), wp-config.php and everything in the shared directory
+      rsync -azL -e "ssh" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
 
       #rsync only the shared directory from the source target repo to the local directory
-      rsync -azL -e "ssh" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source }}/shared/ ./${{ inputs.source }}/shared/
+      # rsync -azL -e "ssh" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source }}/shared/ ./${{ inputs.source }}/shared/
 
       echo "Files synced to local. Preparing to transfer files to destination..."
 
       #rsync everything from the local directory to the destination target repo
-      rsync -az --chown=${{ inputs.file_owner }}:${{ inputs.file_group }} --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
+      rsync -azL --chown=${{ inputs.file_owner }}:${{ inputs.file_group }} --chmod=D${{ inputs.dir_permissions }},F${{ inputs.file_permissions }} -e "ssh" --exclude wp-config.php ./ ${{ inputs.destination_target_user }}@${{ inputs.destination_target_host }}:${{ inputs.destination_target_repo }}/
 
       echo "File sync complete. Preparing to sync branches..."
 

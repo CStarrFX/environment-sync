@@ -129,8 +129,8 @@ runs:
       ssh-add source_repo_private_key
       ssh-add destination_repo_private_key
 
-      rm source_repo_private_key
-      rm destination_repo_private_key
+      source_repo_private_key
+      destination_repo_private_key
 
       echo "SSH prepared. Preparing to sync databases..."
 

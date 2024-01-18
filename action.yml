@@ -166,8 +166,11 @@ runs:
 
       echo "Starting file sync..."
 
-      #rsync everything from the source target repo to the local directory except wp-config.php
-      rsync -az -e "ssh" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
+      #rsync everything from the source target repo to the local directory except symlinks, wp-config.php and everything in /staging/shared
+      rsync -azL -e "ssh" --exclude wp-config.php --exclude '/${{inputs.source}}/shared/' ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/ ./
+
+      #rsync only the shared directory from the source target repo to the local directory
+      rsync -azL -e "ssh" --exclude wp-config.php ${{ inputs.source_target_user }}@${{ inputs.source_target_host }}:${{ inputs.source_target_repo }}/${{ inputs.source }}/shared/ ./${{ inputs.source }}/shared/
 
       echo "Files synced to local. Preparing to transfer files to destination..."
 
@@ -191,16 +194,22 @@ runs:
 
       git checkout ${{ inputs.destination }}
 
-      git reset --hard $(git merge-base ${{ inputs.destination }} ${{ inputs.source }})
+      #checkout backup branch with timestamp
+      backup_branchname=backups/${{ inputs.destination }}-backup-$(date +%s)
+      git checkout -b $backup_branchname
 
-      git rebase ${{ inputs.source }}
+      #push backup branch to origin
+      git push origin $backup_branchname
+
+      git checkout ${{ inputs.destination }}
+
+      git reset --hard $(git merge-base ${{ inputs.destination }} ${{ inputs.source }})
 
       #add user info to git config
       git config --global user.email "environment-sync@webfx.com"
       git config --global user.name "Environment Sync Action"
 
-      #add empty commit to trigger github action
-      git commit --allow-empty -m "Sync ${{ inputs.source }} to ${{ inputs.destination }} [FORCE_DEPLOY]"
+      git merge ${{ inputs.source }} -m "Sync ${{ inputs.source }} to ${{ inputs.destination }} [FORCE_DEPLOY]"
 
       #force push to destination branch
       git push -f origin ${{ inputs.destination }}
